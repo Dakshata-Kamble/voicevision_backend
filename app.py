@@ -5,10 +5,13 @@ import numpy as np
 import cv2
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Load trained model
-MODEL_PATH = "model/currency_model.h5"
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "model", "currency_model.h5")
+
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Class labels (IMPORTANT: order must match training folders)
