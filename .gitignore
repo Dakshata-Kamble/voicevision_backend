@@ -1,0 +1,32 @@
+# 🔹 Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# 🔹 Node
+node_modules/
+
+# 🔹 OS
+.DS_Store
+
+# 🔹 Environment
+.env
+
+# 🔥 ADD THESE (VERY IMPORTANT FOR YOUR PROJECT)
+
+# Dataset (VERY LARGE)
+currency_dataset/
+
+# Training outputs
+runs/
+training/
+
+# Model files (keep only 1 manually if needed)
+*.pt
+
+# Images / logs
+*.jpg
+*.png
+*.jpeg
+*.csv

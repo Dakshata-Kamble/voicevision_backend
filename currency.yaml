@@ -1,0 +1,12 @@
+path: currency_dataset
+
+train: images/train
+val: images/train
+
+names:
+  0: 10
+  1: 20
+  2: 50
+  3: 100
+  4: 200
+  5: 500
