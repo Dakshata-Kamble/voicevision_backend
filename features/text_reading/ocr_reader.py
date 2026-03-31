@@ -1,32 +1,37 @@
 import pytesseract
 import cv2
+import numpy as np
+import re
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+def perform_smart_ocr(image):
+    try:
+        # 1. इमेज को बड़ा और साफ़ करें
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # कॉन्ट्रास्ट बढ़ाना (CLAHE)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        gray = clahe.apply(gray)
 
-def read_text(image):
+        # 2. अक्षरों को मोटा करना (Dilation) ताकि OCR आसानी से पढ़ सके
+        # यह कम रोशनी या दूर की फोटो के लिए बहुत कारगर है
+        kernel = np.ones((1, 1), np.uint8)
+        processed = cv2.dilate(gray, kernel, iterations=1)
+        processed = cv2.threshold(processed, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
-    # resize strongly
-    image = cv2.resize(image, None, fx=3, fy=3)
+        # 3. OCR Configuration
+        # PSM 6: पैराग्राफ को एक ब्लॉक की तरह पढ़ना (Sentence formation के लिए)
+        custom_config = r'--oem 3 --psm 6'
+        text = pytesseract.image_to_string(processed, lang="eng", config=custom_config)
 
-    # grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # 4. सफाई (Cleaning)
+        # सिर्फ काम के शब्द रखना
+        text = re.sub(r'[^A-Za-z0-9\s.,!?]', '', text).strip()
+        # एक्स्ट्रा गैप हटाकर लाइन बनाना
+        clean_text = " ".join(text.split())
 
-    # remove noise
-    gray = cv2.bilateralFilter(gray, 9, 75, 75)
+        print(f"Detected Sentence: {clean_text}")
+        return clean_text
 
-    # adaptive threshold (VERY IMPORTANT)
-    thresh = cv2.adaptiveThreshold(
-        gray,
-        255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY,
-        11,
-        2
-    )
-
-    # OCR config (single block text)
-    config = "--oem 3 --psm 6"
-
-    text = pytesseract.image_to_string(thresh, config=config)
-
-    return text.strip()
+    except Exception as e:
+        print(f"OCR Processing Error: {e}")
+        return ""

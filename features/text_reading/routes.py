@@ -1,24 +1,31 @@
 from flask import Blueprint, request, jsonify
-import numpy as np
 import cv2
-from .ocr_reader import read_text
+import numpy as np
+import traceback # एरर ढूंढने के लिए
+from .ocr_reader import perform_smart_ocr
 
-text_bp = Blueprint("text_reading", __name__)
+text_bp = Blueprint('text_reading', __name__)
 
-@text_bp.route("/read-text", methods=["POST"])
-def read_text_api():
+@text_bp.route('/read-text', methods=['POST'])
+def read_text():
+    try:
+        if 'image' not in request.files:
+            return jsonify({"error": "No image found"}), 400
+        
+        file = request.files['image']
+        img_bytes = np.frombuffer(file.read(), np.uint8)
+        img = cv2.imdecode(img_bytes, cv2.IMREAD_COLOR)
 
-    if "image" not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
+        if img is None:
+            return jsonify({"error": "Failed to decode image"}), 400
 
-    file = request.files["image"]
-    image_bytes = file.read()
+        # OCR प्रोसेस करें
+        extracted_text = perform_smart_ocr(img)
 
-    npimg = np.frombuffer(image_bytes, np.uint8)
-    img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+        return jsonify({"text": extracted_text})
 
-    text = read_text(img)
-
-    return jsonify({
-        "text": text
-    })
+    except Exception as e:
+        # अगर कोई बड़ी एरर आए, तो उसे टर्मिनल में दिखाएं और JSON भेजें
+        print("Backend Error Details:")
+        traceback.print_exc() 
+        return jsonify({"error": str(e)}), 500
